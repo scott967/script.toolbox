@@ -306,26 +306,50 @@ def JumpToLetter(letter):
 
 
 def export_skinsettings(filter_label=False):
+    versionNumber = int(xbmc.getInfoLabel("System.BuildVersion" )[0:2])
     guisettings_path = xbmc.translatePath('special://profile/guisettings.xml').decode("utf-8")
-    if xbmcvfs.exists(guisettings_path):
-        log("guisettings.xml found")
-        doc = parse(guisettings_path)
-        skinsettings = doc.documentElement.getElementsByTagName('setting')
-        newlist = []
-        for count, skinsetting in enumerate(skinsettings):
-            if skinsetting.childNodes:
-                value = skinsetting.childNodes[0].nodeValue
-            else:
-                value = ""
-            setting_name = skinsetting.attributes['name'].nodeValue
-            if setting_name.startswith(xbmc.getSkinDir()):
-                if not filter_label or filter_label in setting_name:
-                    newlist.append((skinsetting.attributes['type'].nodeValue, setting_name, value))
-        if save_to_file(newlist, xbmc.getSkinDir() + ".backup"):
-            xbmcgui.Dialog().ok(ADDON_LANGUAGE(32005), ADDON_LANGUAGE(32006))
+    if versionNumber < 16: 
+        if xbmcvfs.exists(guisettings_path):
+            log("guisettings.xml found")
+            doc = parse(guisettings_path)
+            skinsettings = doc.documentElement.getElementsByTagName('setting')
+            newlist = []
+            for count, skinsetting in enumerate(skinsettings):
+                if skinsetting.childNodes:
+                    value = skinsetting.childNodes[0].nodeValue
+                else:
+                    value = ""
+                setting_name = skinsetting.attributes['name'].nodeValue
+                if setting_name.startswith(xbmc.getSkinDir()):
+                    if not filter_label or filter_label in setting_name:
+                        newlist.append((skinsetting.attributes['type'].nodeValue, setting_name, value))
+            if save_to_file(newlist, xbmc.getSkinDir() + ".backup"):
+                xbmcgui.Dialog().ok(ADDON_LANGUAGE(32005), ADDON_LANGUAGE(32006))
+        else:
+            xbmcgui.Dialog().ok(ADDON_LANGUAGE(32007), ADDON_LANGUAGE(32008))
+            log("guisettings.xml not found")
     else:
-        xbmcgui.Dialog().ok(ADDON_LANGUAGE(32007), ADDON_LANGUAGE(32008))
-        log("guisettings.xml not found")
+        log("Jarvis settings export")
+        current_skin = xbmc.getSkinDir()
+        skinsettings_path = xbmc.translatePath('special://profile/addon_data/' + current_skin + '/settings.xml').decode("utf-8")
+        log("Settings file: " + skinsettings_path)
+        if xbmcvfs.exists(skinsettings_path):
+            doc = parse(skinsettings_path)
+            skinsettings = doc.documentElement.getElementsByTagName('setting')
+            newlist = []
+            for count, skinsetting in enumerate(skinsettings):
+                if skinsetting.childNodes:
+                    value = skinsetting.childNodes[0].nodeValue
+                else:
+                    value = ""
+                setting_name = current_skin + '.' + skinsetting.attributes['id'].nodeValue
+                newlist.append((skinsetting.attributes['type'].nodeValue, setting_name, value))
+            if save_to_file(newlist, current_skin + ".backup"):
+                xbmcgui.Dialog().ok(ADDON_LANGUAGE(32005), ADDON_LANGUAGE(32006))
+        else:
+            xbmcgui.Dialog().ok(ADDON_LANGUAGE(32007), ADDON_LANGUAGE(32008))
+            log("current skin settings.xml not found")
+
 
 
 def CreateDialogSelect(header):
